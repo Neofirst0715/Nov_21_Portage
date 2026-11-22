@@ -1,0 +1,25 @@
+{
+  "_help": "One entry per employer job board. type = greenhouse | lever | workday. Set enabled:false to switch one off. students_only:false keeps every Canadian posting, not just co-op/intern/student titles.",
+  "sources": [
+    {
+      "name": "Manulife",
+      "type": "workday",
+      "host": "manulife.wd3.myworkdayjobs.com",
+      "tenant": "manulife",
+      "site": "MFCJH_Jobs",
+      "search": ["intern", "co-op", "student"]
+    },
+    {
+      "name": "mthree",
+      "type": "greenhouse",
+      "board": "mthreerecruitingportal",
+      "students_only": false
+    },
+    {
+      "name": "Outshine",
+      "type": "greenhouse",
+      "board": "outshine",
+      "students_only": false
+    }
+  ]
+}
