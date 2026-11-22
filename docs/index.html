@@ -37,6 +37,9 @@ header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 
 .sub{font-size:14px;color:var(--muted)}
 .fresh{margin-left:auto;font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:3px 9px}
 .fresh.stale{color:var(--warn);border-color:currentColor}
+.refresh{font-size:13px;font-weight:600;background:var(--ink);color:var(--paper);border-radius:4px;padding:4px 10px;text-decoration:none}
+.refresh:hover{background:var(--accent);color:var(--accent-ink)}
+.howto{margin:0;font-size:13px;color:var(--muted);max-width:70ch}
 
 .hero{display:grid;gap:18px;padding:10px 0 26px}
 .hero h1{font:800 clamp(34px,6vw,62px)/.98 var(--display);letter-spacing:-.035em;margin:0;text-wrap:balance;max-width:14ch}
@@ -125,11 +128,13 @@ aside h2{font:700 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08
     <div class="logo"><i></i>Portage</div>
     <span class="sub">Co-op and internship board for students in Canada</span>
     <span class="fresh" id="fresh">Loading postings…</span>
+    <a class="refresh" id="refresh" href="#" target="_blank" rel="noopener noreferrer">Refresh postings ↗</a>
   </header>
 
   <section class="hero">
     <h1>Find the co-op before the deadline does.</h1>
-    <p><b class="num" id="nOpen">0</b> open postings from <b class="num" id="nSrc">0</b> employer job boards, <b class="num" id="nNew">0</b> new in the last 24 hours.</p>
+    <p><b class="num" id="nOpen">0</b> open postings from <b class="num" id="nSrc">0</b> sources, <b class="num" id="nNew">0</b> new in the last 24 hours.</p>
+    <p class="howto">Postings refresh only when you ask. Press <b>Refresh postings</b>, then <b>Run workflow</b> on the GitHub page that opens. Reload this page about two minutes later.</p>
     <div class="terms" id="terms"></div>
   </section>
 
@@ -172,6 +177,8 @@ aside h2{font:700 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08
 </div>
 
 <script>
+// Your GitHub repository. The Refresh button opens its workflow page.
+const REPO="Neofirst0715/Nov_21_Portage";
 const SEASON={W:["Winter","Jan to Apr"],S:["Summer","May to Aug"],F:["Fall","Sep to Dec"]};
 const CATS={data:"Data & Analytics",software:"Software",finance:"Finance",eng:"Engineering",marketing:"Marketing",health:"Health & Bio",other:"Other"};
 const PROV={NS:"Nova Scotia",NB:"New Brunswick",PE:"Prince Edward Island",NL:"Newfoundland and Labrador",QC:"Québec",ON:"Ontario",MB:"Manitoba",SK:"Saskatchewan",AB:"Alberta",BC:"British Columbia",YT:"Yukon",NT:"Northwest Territories",NU:"Nunavut"};
@@ -226,14 +233,14 @@ function render(){
   $("nSaved").textContent=[...S.saved].filter(id=>JOBS.some(j=>j.id===id)).length;
   const dayAgo=new Date(Date.now()-864e5).toISOString().slice(0,10);
   if(!JOBS.length){
-    $("list").innerHTML=`<div class="empty">${LOADERR?esc(LOADERR):"No postings yet. Run the <code>Refresh postings</code> workflow on GitHub (Actions tab), or run <code>python scraper/scrape.py</code> locally."}</div>`;
+    $("list").innerHTML=`<div class="empty">${LOADERR?esc(LOADERR):"No postings yet. Press <b>Refresh postings</b> at the top, then <b>Run workflow</b> on GitHub."}</div>`;
   }else $("list").innerHTML=rows.length?rows.slice(0,S.shown).map(j=>{
     const sc=score(j),h=hits(j)||[],open=S.open===j.id,isNew=(j.first_seen||"")>=dayAgo;
     return `<article class="job${open?" open":""}">
       <div class="head">
         <div class="score ${sc==null?"":sc>=75?"hi":sc>=50?"mid":""}" title="${sc==null?"Paste your resume to see a match score":h.length+" of "+j.skills.length+" skills matched"}">${sc==null?"–":sc}</div>
         <div><button class="title" type="button" data-open="${esc(j.id)}" aria-expanded="${open}">${esc(j.title)}</button>
-          <div class="sub">${esc(j.company)} · ${esc(j.location||"Location not stated")}${j.mode?" · "+j.mode:""}</div>
+          <div class="sub">${esc(j.company)} · ${esc(j.location||"Location not stated")}${j.mode?" · "+j.mode:""}${j.via?" · via "+esc(j.via):""}</div>
           <div class="tags">${j.terms.map(t=>`<span class="tag">${termName(t)}</span>`).join("")}${j.months.length?`<span class="tag">${j.months.join(" / ")} months</span>`:""}<span class="tag">${CATS[j.cat]||"Other"}</span></div></div>
         <div class="side">${isNew?"<b>New</b>":""}${j.posted?"Posted "+fmtDay(j.posted):"First seen "+fmtDay(j.first_seen)}</div>
         <button class="save" type="button" data-save="${esc(j.id)}" aria-pressed="${S.saved.has(j.id)}" aria-label="${S.saved.has(j.id)?"Remove from saved":"Save posting"}">${S.saved.has(j.id)?"★":"☆"}</button>
@@ -246,16 +253,24 @@ function render(){
 }
 function header(){
   $("nOpen").textContent=JOBS.length;
-  $("nSrc").textContent=META.sources.filter(s=>s.ok).length;
+  $("nSrc").textContent=META.sources.filter(s=>s.ok&&s.note!=="standby").length;
   const dayAgo=new Date(Date.now()-864e5).toISOString().slice(0,10);
   $("nNew").textContent=JOBS.filter(j=>(j.first_seen||"")>=dayAgo).length;
   const f=$("fresh");
   if(META.updated){
     const mins=Math.max(0,Math.round((Date.now()-new Date(META.updated))/6e4));
-    f.textContent="Updated "+(mins<60?mins+" min ago":mins<2880?Math.round(mins/60)+" h ago":Math.round(mins/1440)+" days ago");
-    f.classList.toggle("stale",mins>180);
+    f.textContent="Last refreshed "+(mins<60?mins+" min ago":mins<2880?Math.round(mins/60)+" h ago":Math.round(mins/1440)+" days ago");
+    f.classList.toggle("stale",mins>4320);
   }else{f.textContent=LOADERR?"Could not load postings":"Not refreshed yet";f.classList.add("stale")}
-  $("src").innerHTML=META.sources.length?META.sources.map(s=>`<li class="${s.ok?"":"bad"}">${esc(s.name)}: ${s.ok?s.count+" postings":"failed, showing last good data"}</li>`).join(""):"<li>None loaded yet.</li>";
+  const srcLine=s=>{
+    const left=typeof s.left==="number"?" ("+s.left+" requests left)":"";
+    if(s.note==="standby")return s.name+": standby"+left;
+    if(s.ok)return s.name+": "+s.count+" postings"+left;
+    if(/^not configured/.test(s.error||""))return s.name+": not set up yet";
+    if(/^quota/.test(s.error||""))return s.name+": quota used up, switched to the next source";
+    return s.name+": failed, showing last good data";
+  };
+  $("src").innerHTML=META.sources.length?META.sources.map(s=>`<li class="${s.ok?"":"bad"}">${esc(srcLine(s))}</li>`).join(""):"<li>None loaded yet.</li>";
   const provs=[...new Set(JOBS.map(j=>j.prov).filter(Boolean))].sort();
   $("prov").innerHTML='<option value="">All provinces</option>'+provs.map(k=>`<option value="${k}">${PROV[k]||k}</option>`).join("");
   $("prov").value=S.prov;
@@ -285,6 +300,7 @@ bind("savedOnly","change",t=>S.savedOnly=t.checked);
 bind("sort","change",t=>S.sort=t.value);
 bind("resume","input",t=>{S.resume=t.value;store.set("portage.resume",S.resume)});
 $("resume").value=S.resume;
+$("refresh").href="https://github.com/"+REPO+"/actions/workflows/refresh.yml";
 
 fetch("jobs.json?t="+Date.now()).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(doc=>{
   META={updated:doc.updated||null,sources:doc.sources||[]};

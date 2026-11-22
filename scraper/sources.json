@@ -1,5 +1,5 @@
 {
-  "_help": "One entry per employer job board. type = greenhouse | lever | workday. Set enabled:false to switch one off. students_only:false keeps every Canadian posting, not just co-op/intern/student titles.",
+  "_help": "One entry per source, tried top to bottom. type = greenhouse | lever | workday | simplify | jsearch | jooble | adzuna. enabled:false switches one off. students_only:false keeps every Canadian posting, not just co-op/intern/student titles. Sources that share a group are alternatives: on each refresh the first one in the list that has a key and quota left is used, and the rest stay on standby. budget = requests allowed (per_day, per_month, or total for a one-off allowance); when it runs out the next source in the group takes over.",
   "sources": [
     {
       "name": "Manulife",
@@ -7,7 +7,11 @@
       "host": "manulife.wd3.myworkdayjobs.com",
       "tenant": "manulife",
       "site": "MFCJH_Jobs",
-      "search": ["intern", "co-op", "student"]
+      "search": [
+        "intern",
+        "co-op",
+        "student"
+      ]
     },
     {
       "name": "mthree",
@@ -20,6 +24,88 @@
       "type": "greenhouse",
       "board": "outshine",
       "students_only": false
+    },
+    {
+      "name": "SimplifyJobs",
+      "type": "simplify",
+      "keep_days": 0
+    },
+    {
+      "name": "JSearch",
+      "type": "jsearch",
+      "via": "openwebninja",
+      "group": "aggregators",
+      "budget": {
+        "per_month": 200
+      },
+      "keep_days": 7,
+      "country": "ca",
+      "date_posted": "month",
+      "queries": [
+        "co-op in Halifax, Nova Scotia",
+        "intern in Halifax, Nova Scotia",
+        "student jobs in Nova Scotia",
+        "data analyst co-op in Halifax, Nova Scotia",
+        "data co-op in Canada",
+        "data analyst intern in Canada",
+        "machine learning intern in Canada",
+        "business intelligence co-op in Canada"
+      ]
+    },
+    {
+      "name": "Jooble",
+      "type": "jooble",
+      "group": "aggregators",
+      "budget": {
+        "per_day": 100
+      },
+      "keep_days": 7,
+      "queries": [
+        {
+          "keywords": "co-op",
+          "location": "Halifax, NS"
+        },
+        {
+          "keywords": "intern",
+          "location": "Halifax, NS"
+        },
+        {
+          "keywords": "student",
+          "location": "Nova Scotia"
+        },
+        {
+          "keywords": "data analyst co-op",
+          "location": "Canada"
+        },
+        {
+          "keywords": "data intern",
+          "location": "Canada"
+        },
+        {
+          "keywords": "business intelligence co-op",
+          "location": "Canada"
+        }
+      ]
+    },
+    {
+      "name": "Adzuna",
+      "type": "adzuna",
+      "country": "ca",
+      "keep_days": 7,
+      "max_days_old": 30,
+      "queries": [
+        {
+          "what_or": "co-op coop intern internship student",
+          "where": "Nova Scotia"
+        },
+        {
+          "what": "data co-op"
+        }
+      ],
+      "group": "aggregators",
+      "budget": {
+        "total": 25
+      }
     }
   ]
 }

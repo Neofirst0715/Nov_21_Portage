@@ -1,9 +1,10 @@
 name: Refresh postings
 
 on:
-  schedule:
-    - cron: "17 * * * *"   # every hour, at minute 17 (UTC)
-  workflow_dispatch:        # lets you press "Run workflow" by hand
+  workflow_dispatch:        # manual only: press "Run workflow" when you want fresh postings
+  # To refresh automatically as well, uncomment the next two lines (this example is every 6 hours):
+  # schedule:
+  #   - cron: "17 */6 * * *"
 
 permissions:
   contents: write
@@ -22,6 +23,12 @@ jobs:
           python-version: "3.12"
       - name: Scrape employer job boards
         run: python scraper/scrape.py
+        env:
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          JSEARCH_API_KEY: ${{ secrets.JSEARCH_API_KEY }}
+          JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+          PORTAGE_FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
       - name: Commit new data
         run: |
           git config user.name "portage-bot"
